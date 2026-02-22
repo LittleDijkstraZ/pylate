@@ -11,6 +11,7 @@ from .hybrid_importance_pooling import (
 from .random_pruning import RandomPruningConfig, RandomPruningStrategy
 from .random_pooling import RandomPoolingConfig, RandomPoolingStrategy
 from .pooling import PoolingStrategy
+from .attention_pooling import AttentionPoolingConfig, AttentionPoolingStrategy
 
 
 @dataclass
@@ -78,6 +79,7 @@ class CompressionConfig:
             "random_pruning": RandomPruningStrategy,
             "random_pooling": RandomPoolingStrategy,
             "pooling": PoolingStrategy,
+            "attention_pooling": AttentionPoolingStrategy,
         }
         
         for strategy_data in data.get("strategies", []):

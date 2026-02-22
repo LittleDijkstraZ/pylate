@@ -1,0 +1,25 @@
+# Amazon compression evaluation configuration.
+# Inherits all base settings from compression_eval.yaml and overrides only
+# the Amazon-specific values (dataset path, configs file, output directory).
+#
+# Usage:
+#   python experiments/compression/compression_eval.py \
+#       --config-name=compression_eval_amazon
+#
+# Override the dataset variant at the command line if needed, e.g.:
+#   dataset.name=../amazon_dataset/beir_format
+
+defaults:
+  - compression_eval   # load the base config first
+  - _self_             # then apply the overrides below
+
+dataset:
+  name: "../amazon_dataset/beir_format_full"
+
+compression:
+  # Only evaluate Attention pooling, Spherical pooling, and Random pooling.
+  configs_file: "experiments/compression/conf/amazon_compression_configs.jsonl"
+
+output:
+  results_dir: "results/compression_eval_amazon"
+
