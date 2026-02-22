@@ -220,6 +220,28 @@ def move_embeddings_to_cpu(embeddings: List[torch.Tensor]) -> List[torch.Tensor]
     return [emb.cpu() for emb in embeddings]
 
 
+def _load_dataset_local(
+    dataset_id: str, lowercase: bool = False
+) -> Tuple[List[Dict[str, str]], Dict[str, str], Dict[str, Dict[str, int]]]:
+    """Load a local BEIR-format dataset directory (corpus/queries/qrels sub-structure)."""
+    from pylate import evaluation as pylate_evaluation
+
+    logger.info("Detected local path — loading BEIR-format dataset from: %s", dataset_id)
+    documents, queries, qrels = pylate_evaluation.load_custom_dataset(dataset_id, split="test")
+
+    if lowercase:
+        documents = [{"id": doc["id"], "text": doc["text"].lower()} for doc in documents]
+        queries = {qid: q.lower() for qid, q in queries.items()}
+
+    logger.info(
+        "Loaded %d documents, %d queries, %d queries with qrels",
+        len(documents),
+        len(queries),
+        len(qrels),
+    )
+    return documents, queries, qrels
+
+
 def load_dataset_irds(
     dataset_id: str, lowercase: bool = False
 ) -> Tuple[List[Dict[str, str]], Dict[str, str], Dict[str, Dict[str, int]]]:
@@ -275,6 +297,20 @@ def load_dataset_irds(
         len(qrels),
     )
     return documents, queries, qrels
+
+
+def load_dataset(
+    dataset_id: str, lowercase: bool = False
+) -> Tuple[List[Dict[str, str]], Dict[str, str], Dict[str, Dict[str, int]]]:
+    """Load a dataset, dispatching to a local BEIR loader or ir_datasets.
+
+    If *dataset_id* resolves to an existing directory on the filesystem it is
+    treated as a local BEIR-format dataset (corpus / queries / qrels layout).
+    Otherwise it is forwarded to :func:`load_dataset_irds`.
+    """
+    if Path(dataset_id).is_dir():
+        return _load_dataset_local(dataset_id, lowercase)
+    return load_dataset_irds(dataset_id, lowercase)
 
 
 def build_cache_paths(
@@ -990,7 +1026,7 @@ def main(cfg: DictConfig) -> None:
     logger.info("=" * 80)
     logger.info("Loading dataset...")
     logger.info("=" * 80)
-    documents, queries, qrels = load_dataset_irds(dataset_id, lowercase=cfg.dataset.lowercase)
+    documents, queries, qrels = load_dataset(dataset_id, lowercase=cfg.dataset.lowercase)
 
     # Set up output directories
     # When resuming into an existing run directory, write results there instead of
