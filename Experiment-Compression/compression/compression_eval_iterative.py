@@ -852,6 +852,8 @@ def evaluate_compression_config(
         index.add_documents(
             documents_ids=shard_doc_ids,
             documents_embeddings=compressed,
+            batch_size=cfg.index.batch_size,
+        )
         shard_index_time = time.time() - t0
         index_time += shard_index_time
         logger.info(
@@ -1198,9 +1200,9 @@ def main(cfg: DictConfig) -> None:
 if __name__ == "__main__":
     main()
 
-"""
-srunv100 --mem 164G -c 12 python experiments/compression/compression_eval_iterative.py \
-dataset.name=beir/nq \
-index.device=cuda \
-"compression.indices=[31, 27]"
-"""
+# """
+# srunv100 --mem 164G -c 12 python experiments/compression/compression_eval_iterative.py \
+# dataset.name=beir/nq \
+# index.device=cuda \
+# "compression.indices=[31, 27]"
+# """
