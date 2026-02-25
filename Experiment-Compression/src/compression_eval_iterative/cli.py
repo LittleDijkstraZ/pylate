@@ -24,7 +24,7 @@ from .cache import (
     encode_queries_with_cache,
 )
 from .configs import create_default_configs, load_configs_from_jsonl
-from .datasets import load_dataset
+from .data_loading import load_dataset
 from .evaluate import evaluate_compression_config
 from .utils import get_torch_dtype, resolve_query_length
 
@@ -170,11 +170,6 @@ def main(cfg: DictConfig) -> None:
     existing_by_name: Dict[str, Dict[str, Any]] = {}
     next_config_idx: Optional[int] = None
     if resume_mode:
-        from .configs import serialize_config_for_storage
-        from .evaluate import evaluate_compression_config
-        from .provenance import build_provenance
-        from .utils import sanitize_dataset_name
-
         existing_by_name = scan_existing_results(results_dir)
         logger.info("Found %d existing results in %s", len(existing_by_name), results_dir)
         existing_indices = [
@@ -283,3 +278,7 @@ def scan_existing_results(results_dir: Path) -> Dict[str, Dict[str, Any]]:
         except Exception as exc:
             logger.warning("Could not load %s: %s", eval_file, exc)
     return existing
+
+
+if __name__ == "__main__":
+    main()

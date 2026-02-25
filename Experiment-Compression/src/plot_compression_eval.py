@@ -21,6 +21,7 @@ COLORS: Dict[str, str] = {
     # Pooling methods
     "Hierarchical Pooling": "#4E79A7",  # Blue
     "Spherical Pooling": "#59A14F",    # Green
+    "Spherical Pooling+": "#1F8B4C",   # Dark Green
     "IDF Pooling": "#F28E2B",         # Orange
     "Random pooling": "#B07AA1",       # Purple
     "Attention score pooling": "#E15759",  # Red
@@ -37,6 +38,7 @@ MARKERS: Dict[str, str] = {
     "Baseline": "*",
     "Hierarchical Pooling": "o",
     "Spherical Pooling": "s",
+    "Spherical Pooling+": "D",
     "IDF Pooling": "^",
     "Random pooling": "v",
     "Attention score pooling": "<",
@@ -50,6 +52,7 @@ MARKERS: Dict[str, str] = {
 KNOWN_METHODS: List[str] = [
     "Baseline",
     "Hierarchical Pooling",
+    "Spherical Pooling+",
     "Spherical Pooling",
     "IDF Pooling",
     "Random pooling",
@@ -69,6 +72,21 @@ def infer_method(config_name: str) -> str:
             return m
     # Fallback: first two words
     return " ".join(config_name.split()[:2])
+
+
+def pretty_dataset_name(dataset_id: str) -> str:
+    """Return a short human-readable name for a dataset.
+
+    Absolute filesystem paths are shortened to their last two components
+    (e.g. ``amazon_dataset/beir_format_full``).  ir_datasets-style IDs such
+    as ``beir/nfcorpus/test`` are returned unchanged.
+    """
+    p = Path(dataset_id)
+    if p.is_absolute():
+        # Use at most the last two path components
+        parts = p.parts
+        return "/".join(parts[-2:]) if len(parts) >= 2 else p.name
+    return dataset_id
 
 
 def load_run(run_dir: Path) -> pd.DataFrame:
@@ -132,7 +150,7 @@ def plot_run(df: pd.DataFrame, out_dir: Path) -> None:
     metrics = [m for m in default_metrics if m in df.columns]
     title_suffix = ""
     if df.attrs.get("dataset_id"):
-        title_suffix += f" | {df.attrs['dataset_id']}"
+        title_suffix += f" | {pretty_dataset_name(df.attrs['dataset_id'])}"
     if df.attrs.get("model_name"):
         title_suffix += f" | {df.attrs['model_name']}"
 
@@ -483,7 +501,8 @@ def main() -> None:
         print(f"  Saved per-run plots to: {plots_dir}")
 
         # Build label for combined / average plots (disambiguate collisions)
-        label = df.attrs.get("dataset_id") or run_dir.name
+        raw_label = df.attrs.get("dataset_id") or run_dir.name
+        label = pretty_dataset_name(raw_label)
         if label in run_dfs:
             label = f"{label} ({run_dir.name})"
         run_dfs[label] = df
