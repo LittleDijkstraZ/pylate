@@ -1,0 +1,7 @@
+{
+  "avg_doclen": 90.79361459521094,
+  "nbits": 4,
+  "num_chunks": 1,
+  "num_embeddings": 79626,
+  "num_partitions": 4096
+}

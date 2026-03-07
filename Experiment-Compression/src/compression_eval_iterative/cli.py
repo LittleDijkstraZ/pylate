@@ -17,6 +17,7 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 
 from pylate import models
 
+from .bm25_eval import evaluate_bm25
 from .cache import (
     build_cache_paths,
     compute_and_cache_idf_stats,
@@ -164,6 +165,25 @@ def main(cfg: DictConfig) -> None:
     logger.info("=" * 80)
 
     all_results: List[Dict[str, Any]] = []
+
+    if cfg.get("bm25", {}).get("enabled", False):
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info("BM25 BASELINE EVALUATION")
+        logger.info("=" * 80)
+        bm25_result = evaluate_bm25(
+            cfg=cfg,
+            documents=documents,
+            queries=queries,
+            qrels=qrels,
+            results_dir=results_dir,
+            run_id=run_id,
+        )
+        all_results.append(bm25_result)
+        jsonl_path = results_dir / "results.jsonl"
+        with open(jsonl_path, "a") as f:
+            f.write(json.dumps(bm25_result, default=str) + "\n")
+
     skip_count = cfg.compression.get("skip", 0)
     run_indices = cfg.compression.get("indices", None)
 

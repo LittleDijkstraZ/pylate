@@ -63,6 +63,10 @@ output:
   save_runfile: true
   save_jsonl: true
 
+bm25:
+  enabled: false   # off by default; override in dataset-specific configs
+  variant: okapi   # okapi | plus | l  (maps to BM25Okapi / BM25Plus / BM25L)
+
 hydra:
   run:
     # Output directory: results_dir/timestamp

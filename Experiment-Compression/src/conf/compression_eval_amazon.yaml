@@ -1,0 +1,81 @@
+# Amazon dataset — compression evaluation config
+# Reproduces the settings from results/compression_eval_amazon/20260220_235637/
+#
+# Usage:
+#   python src/compression_eval_iterative/cli.py --config-name compression_eval_amazon
+#
+# Override the dataset path at runtime if needed:
+#   AMAZON_DATASET=/path/to/beir_format python src/compression_eval_iterative/cli.py \
+#       --config-name compression_eval_amazon dataset.name=${oc.env:AMAZON_DATASET}
+
+defaults:
+  - compression_eval  # inherit base defaults
+  - _self_           # this file overrides last
+
+model:
+  name_or_path: "lightonai/GTE-ModernColBERT-v1"
+  doc_len: 300
+  query_len: null
+  dtype: "bf16"         # original run used bf16
+  compile: false
+
+dataset:
+  # Path relative to Experiment-Compression/ CWD, two levels up to AI2AI/, then into amazon_dataset.
+  # Override via AMAZON_DATASET env var or dataset.name= on the CLI.
+  name: "../../amazon_dataset/beir_format_full"
+  lowercase: false
+
+cache:
+  enable: true
+  dir: "cache/embeddings"
+  schema_version: 1
+  embedding_dtype: "fp32"   # original run used fp32
+
+encode:
+  batch_size: 512
+  shard_size: 50000
+  move_embeddings_to_cpu: true
+
+compression:
+  # 16 configs matching the 20260220_235637 run:
+  #   1 baseline + 5 attention_pooling + 5 spherical_pooling + 5 random_pooling
+  configs_file: "src/conf/amazon_compression_configs.jsonl"
+  indices: null     # run all configs
+  skip: 0
+  resume: false
+  resume_dir: null
+
+retrieve:
+  k: 100
+  verbose: false
+
+index:
+  use_fast: true
+  device: null              # auto (GPU if available)
+  nbits: 4
+  kmeans_niters: 4
+  max_points_per_centroid: 256
+  n_ivf_probe: 8
+  n_full_scores: 8192
+  n_samples_kmeans: null    # no cap on KMeans training samples
+  batch_size: 16384
+  use_triton: null
+  fallback_on_oom: true
+
+metrics:
+  - "map"
+  - "ndcg@10"
+  - "ndcg@100"
+  - "recall@10"
+  - "recall@100"
+  - "mrr@10"
+  - "precision@10"
+
+output:
+  results_dir: "results/compression_eval_amazon_iterative"
+  save_runfile: true
+  save_jsonl: true
+
+bm25:
+  enabled: true
+  variant: okapi

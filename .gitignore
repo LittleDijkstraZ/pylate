@@ -171,6 +171,10 @@ uv.lock
 indexes/*
 pylate-index/*
 
+# Experiment-Compression generated index artifacts
+Experiment-Compression/indexes/
+*.npy
+
 # experimental results / dev artifacts
 results/
 evaluation_results/
