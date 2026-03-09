@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import torch
@@ -36,6 +38,23 @@ def sanitize_model_name(model_name: str) -> str:
     if "_checkpoint-" in sanitized:
         sanitized = sanitized.rsplit("_checkpoint-", 1)[0]
     return sanitized
+
+
+def versioned_dir(base: Path) -> Path:
+    """Return *base* if it does not exist, otherwise *base_YYYYMMDD_HHMMSS*.
+
+    This lets callers write results to a stable name on the first run and
+    automatically version subsequent runs without overwriting previous output.
+
+    Example::
+
+        # first run  → results/amazon/baselines/config_dense_mpnet
+        # second run → results/amazon/baselines/config_dense_mpnet_20260309_142301
+    """
+    if not base.exists():
+        return base
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return base.parent / f"{base.name}_{timestamp}"
 
 
 def short_hash(payload: Dict[str, Any], length: int = 10) -> str:

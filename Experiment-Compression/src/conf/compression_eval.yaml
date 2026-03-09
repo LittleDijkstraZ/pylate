@@ -65,12 +65,42 @@ output:
 
 bm25:
   enabled: false   # off by default; override in dataset-specific configs
-  variant: okapi   # okapi | plus | l  (maps to BM25Okapi / BM25Plus / BM25L)
+  variants:        # list of BM25 variants; okapi | plus | l
+    - okapi
+
+splade:
+  enabled: false                  # off by default; override in dataset-specific configs
+  batch_size: 64                  # encoding batch size (documents and queries)
+  max_length: 256                 # tokenizer max sequence length
+  retrieve_query_batch_size: 512  # number of queries scored per dot-product call
+  device: null                    # null = auto (CUDA if available, else CPU)
+  models:
+    - model_name_or_path: "naver/splade-v3"
+
+dense:
+  enabled: false                    # off by default; override in dataset-specific configs
+  batch_size: 128                   # encoding batch size (documents and queries)
+  max_length: 512                   # tokenizer max sequence length
+  normalize_embeddings: true        # L2-normalise embeddings before dot-product search
+  retrieve_query_batch_size: 256    # number of queries scored per matmul call
+  device: null                      # null = auto (CUDA if available, else CPU)
+  models:
+    - model_name_or_path: "Alibaba-NLP/gte-base-en-v1.5"
+    # nvidia/NV-Embed-v2 — instruction-aware embedding model (commented out by default).
+    # query_prefix / passage_prefix are forwarded as instruction= to model.encode() (auto-detected).
+    # For text-prepend models (E5-instruct), the prefix is prepended directly to each text instead.
+    # - model_name_or_path: "nvidia/NV-Embed-v2"
+    #   max_length: 32768
+    #   batch_size: 2
+    #   retrieve_query_batch_size: 64
+    #   normalize_embeddings: true
+    #   query_prefix: "Instruct: Given a question, retrieve passages that answer the question\nQuery: "
+    #   passage_prefix: ""
 
 hydra:
   run:
-    # Output directory: results_dir/timestamp
-    dir: ${output.results_dir}/${now:%Y%m%d_%H%M%S}
+    # Output directory: results_dir/baselines (fixed name, models go into subdirs)
+    dir: ${output.results_dir}/baselines
   sweep:
     dir: ${output.results_dir}
     subdir: ${now:%Y%m%d_%H%M%S}

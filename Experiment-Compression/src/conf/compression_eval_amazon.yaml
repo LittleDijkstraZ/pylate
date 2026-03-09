@@ -72,10 +72,58 @@ metrics:
   - "precision@10"
 
 output:
-  results_dir: "results/compression_eval_amazon_iterative"
+  results_dir: "results/amazon"
   save_runfile: true
   save_jsonl: true
 
 bm25:
   enabled: true
-  variant: okapi
+  variants:          # list of BM25 variants to evaluate; add "plus" or "l" for more
+    - okapi
+
+splade:
+  enabled: false   # set true to add SPLADE as an additional baseline
+  batch_size: 64
+  max_length: 256
+  retrieve_query_batch_size: 512
+  device: null     # null = auto (CUDA if available)
+  models:
+    - model_name_or_path: "naver/splade-v3"           # gated — skipped if no access
+    - model_name_or_path: "naver/splade-cocondenser-ensembledistil"  # public fallback
+
+
+dense:
+  enabled: false   # set true to add a dense bi-encoder baseline
+  batch_size: 128
+  max_length: 512
+  normalize_embeddings: true
+  retrieve_query_batch_size: 256
+  device: null     # null = auto (CUDA if available)
+  models:
+    # - model_name_or_path: "Alibaba-NLP/gte-base-en-v1.5"
+
+    - model_name_or_path: "sentence-transformers/all-mpnet-base-v2"
+
+    # nvidia/NV-Embed-v2 — instruction-aware embedding model.
+    # Requires: huggingface-cli login + accepting terms at huggingface.co/nvidia/NV-Embed-v2
+    # Uses model.encode(instruction=...) path automatically (detected at runtime via hasattr).
+    # normalize_embeddings is applied after model.encode() returns, matching the reference script.
+    - model_name_or_path: "nvidia/NV-Embed-v2"
+      max_length: 4096            # 32768 causes 226 GiB KV-cache OOM; 4096 fits within 93 GiB GPU
+      batch_size: 1               # Mistral-7B backbone → smallest batch to minimise peak memory
+      retrieve_query_batch_size: 64
+      normalize_embeddings: true  # F.normalize(p=2) applied after encode(), matches reference code
+      query_prefix: "Instruct: Given a question, retrieve passages that answer the question\nQuery: "
+      passage_prefix: ""          # no instruction for passages (matches reference code)
+
+    # intfloat/e5-mistral-7b-instruct — decoder-only (Mistral 7B) embedding model.
+    # Uses last_token pooling (causal-LM architecture, no [CLS] token).
+    # Query gets a task instruction; passages are encoded without prefix.
+    - model_name_or_path: "intfloat/e5-mistral-7b-instruct"
+      max_length: 4096            # e5-mistral supports up to 4096 tokens
+      batch_size: 4               # large 7B model → keep batch small
+      retrieve_query_batch_size: 64
+      normalize_embeddings: true
+      pooling_strategy: "last_token"  # required for decoder/causal-LM architectures
+      query_prefix: "Instruct: Given a question, retrieve passages that answer the question\nQuery: "
+      passage_prefix: ""          # no instruction for passages
